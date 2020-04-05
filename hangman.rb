@@ -1,41 +1,62 @@
 require 'yaml'
 class Hangman
-  MAX_TURNS = 10
+  MAX_TRIES = 10
+  SAVE_WORD = "SAVE"
   def initialize
     game_reset
   end
   def game_reset
-    @turn = 1
+    @tries = 1
     @guess_arr = []
     @answer = random_line
     game_play
   end
-  def game_play
+    def game_play
     gameover=false
     while (!gameover)
       round()
       gameover = gameover?
     end
+    game_reset if play_again?
   end
   def round
     show_turns
-    @turn += 1
     show_progress
     @guess_arr << guess
+    @tries += 1 if false_guess?
+  end
+  def false_guess?
+    @answer.chars.each do |a|
+      if @guess_arr[-1] == a
+        return false 
+      end
+    end
+    if @guess_arr[-1] == SAVE_WORD
+      return false
+    end
+    true
+  end
+  def play_again?
+    puts "Play again?"
+    input = gets.chomp
+    return false if input[0] == "n"
+    true
   end
   def show_turns
-    puts "#{@turn} / #{MAX_TURNS}"
+    puts "#{@tries} / #{MAX_TRIES}"
   end
   def gameover?
-    if @guess_arr[-1] == 'save'
+    if @guess_arr[-1] == SAVE_WORD
       save
-      puts "Game saved, goodbye"
-      return true
-    elsif (@turn==MAX_TURNS)
-      puts "Game lost, play again?"
+      puts "Game saved."
       return true
     elsif ((@answer.chars-@guess_arr).empty?)
-      puts "Game WON! Play again"
+      puts @answer
+      puts "Game WON!"
+      return true
+    elsif (@tries==MAX_TRIES)
+      puts @answer
+      puts "Game lost."
       return true
     else 
       return false
@@ -58,13 +79,17 @@ class Hangman
   end
 
   def guess
-    puts "Input a single character as a guess."
+    print "   "
     input = gets.chomp.upcase
-    input 
+    if input == SAVE_WORD
+      input 
+    else
+      input[0]
+    end
   end
 
   def random_line
-    File.readlines("dict/short-dict").sample.gsub("\n", "").upcase
+    File.readlines("dict/new-dict").sample.gsub("\n", "").upcase
   end
   def save
     Dir.mkdir('save') unless File.exists?('save')
@@ -77,15 +102,26 @@ class Game
     mode
   end
   def mode
-    puts "press enter to play, write load to load earlier game. Enter save, if you ever wish to leave."
-    input = gets.chomp
-    if input[0].downcase == "l"
-      puts "loading"
-    else
-      hangman = Hangman.new
-    end
+    puts "Enter play start, write load to return to earlier game. Enter save, if you ever wish to leave."
+#    begin
+#      retries ||= 0
+      input = gets.chomp
+      if input[0].upcase == "L"
+        puts "loading"
+        hangman = load
+        hangman.game_play
+      else
+        puts "playing"
+        hangman = Hangman.new
+      end
+#      raise 'An error has occured'  
+#    rescue
+    puts "Enter valid input"
+#      retry if (retries +=1) <3
+#    end
   end
   def load
+    YAML.load(File.read('save/save.yml'))
   end
   def greeting
     puts "welcome"

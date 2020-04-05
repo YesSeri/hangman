@@ -1,2 +1,10 @@
 --- !ruby/object:Hangman
-turn: 1
+tries: 4
+guess_arr:
+- H
+- O
+- Z
+- X
+- C
+- SAVE
+answer: HOMESTEADER
